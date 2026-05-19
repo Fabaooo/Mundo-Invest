@@ -20,14 +20,14 @@ const SEED_USERS: MockUser[] = [
   {
     id: 'user_test_001',
     email: 'teste@email.com',
-    password: '123456',
+    password: '12345678',
     full_name: 'Usuário Teste',
     risk_profile: 'MODERATE',
   },
   {
     id: 'user_demo_001',
     email: 'demo@email.com',
-    password: 'demo123',
+    password: 'demo1234',
     full_name: 'Demo User',
     risk_profile: 'CONSERVATIVE',
   },
@@ -156,11 +156,16 @@ export function updateUserProfile(
 
 export function verifyToken(token: string): { userId: string | null; error: string | null } {
   try {
-    // Mock token verification - just extract user ID from token
-    if (token.startsWith('mock_access_')) {
-      const parts = token.split('_')
-      if (parts.length >= 3) {
-        const userId = parts[2]
+    const prefix = 'mock_access_'
+
+    // Mock token verification - extract user ID between the prefix and timestamp.
+    // User IDs contain underscores, so a naive split would turn user_demo_001 into "user".
+    if (token.startsWith(prefix)) {
+      const tokenBody = token.slice(prefix.length)
+      const timestampSeparator = tokenBody.lastIndexOf('_')
+
+      if (timestampSeparator > 0) {
+        const userId = tokenBody.slice(0, timestampSeparator)
         return { userId, error: null }
       }
     }

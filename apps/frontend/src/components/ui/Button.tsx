@@ -14,12 +14,12 @@ export default function Button({
   className = '',
   ...rest
 }: Props) {
-  const baseClasses = 'rounded-lg px-4 py-2 font-semibold transition-all text-sm '
+  const baseClasses = 'rounded-lg px-4 py-2 font-semibold transition-all duration-200 text-sm shadow-sm '
   const variantClasses =
     variant === 'primary'
-      ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+      ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-[0_24px_70px_-30px_rgba(59,130,246,0.75)] hover:shadow-[0_30px_90px_-30px_rgba(56,189,248,0.65)] hover:-translate-y-0.5 focus:ring-2 focus:ring-sky-400/60'
       : variant === 'secondary'
-      ? 'bg-slate-100 text-slate-800 hover:bg-slate-200'
+      ? 'bg-white/10 text-white border border-white/15 shadow-[0_10px_24px_-12px_rgba(255,255,255,0.6)] hover:bg-white/20 focus:ring-2 focus:ring-white/20'
       : 'bg-transparent text-slate-600 hover:bg-slate-100'
   const stateClasses = disabled || isLoading ? 'opacity-60 cursor-not-allowed' : ''
 

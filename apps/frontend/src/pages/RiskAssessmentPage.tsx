@@ -120,14 +120,14 @@ function RiskAssessmentPage() {
     }
 
     // Redirect to dashboard
-    navigate('/')
+    navigate('/dashboard')
   }
 
   return (
     <div style={styles.container}>
       <div style={styles.card}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🌍 Mundo Invest</h1>
+          <img src="/mundo-invest-logo-cutout.png" alt="Mundo Invest" style={styles.titleImage} />
           <p style={styles.subtitle}>Questões sobre Perfil de Risco</p>
         </div>
 
@@ -262,6 +262,14 @@ const styles = {
     fontWeight: 'bold',
     color: '#4f46e5',
     margin: '0 0 0.5rem 0',
+  },
+  titleImage: {
+    width: '220px',
+    maxWidth: '70%',
+    borderRadius: '16px',
+    objectFit: 'contain' as const,
+    marginBottom: '0.75rem',
+    boxShadow: '0 18px 44px -28px rgba(79, 70, 229, 0.75)',
   },
   subtitle: {
     color: '#666',

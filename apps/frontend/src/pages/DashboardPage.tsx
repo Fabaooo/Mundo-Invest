@@ -59,7 +59,9 @@ function DashboardPage() {
     <div className="dashboard-page">
       <header className="dashboard-header">
         <div className="dashboard-header-layout">
-          <h1>🌍 Mundo Invest</h1>
+          <div className="dashboard-brand">
+            <img src="/mundo-invest-logo-cutout.png" alt="Mundo Invest" />
+          </div>
           <div className="dashboard-actions">
             <button className="btn btn-primary" onClick={handleOpenMarket}>
               📊 Ver mercado

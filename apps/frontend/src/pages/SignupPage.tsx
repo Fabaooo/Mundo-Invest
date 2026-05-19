@@ -47,7 +47,7 @@ function SignupPage() {
 
       navigate('/risk-assessment')
     } else {
-      navigate('/')
+      navigate('/dashboard')
     }
 
     setIsLoading(false)
@@ -56,7 +56,11 @@ function SignupPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <section className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="text-3xl font-extrabold text-indigo-700 text-center">Mundo Invest</h1>
+        <img
+          src="/mundo-invest-logo-cutout.png"
+          alt="Mundo Invest"
+          className="mx-auto h-28 w-auto rounded-2xl object-contain shadow-lg"
+        />
         <p className="text-center text-slate-500 mt-2 mb-6">Crie sua conta</p>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
