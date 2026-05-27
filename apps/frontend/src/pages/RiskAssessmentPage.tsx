@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import * as authService from '../services/authService'
+import Button from '../components/ui/Button'
 
 interface Question {
   id: string
@@ -61,297 +62,178 @@ const RISK_QUESTIONS: Question[] = [
   },
 ]
 
+const riskProfileLabels: Record<string, string> = {
+  CONSERVATIVE: 'Conservador',
+  MODERATE: 'Moderado',
+  AGGRESSIVE: 'Agressivo',
+}
+
+function calculateRiskProfile(answers: Record<string, 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE'>) {
+  const scores = {
+    CONSERVATIVE: 0,
+    MODERATE: 0,
+    AGGRESSIVE: 0,
+  }
+
+  Object.values(answers).forEach((answer) => {
+    scores[answer]++
+  })
+
+  if (scores.AGGRESSIVE > scores.MODERATE && scores.AGGRESSIVE > scores.CONSERVATIVE) {
+    return 'AGGRESSIVE'
+  }
+
+  if (scores.MODERATE > scores.CONSERVATIVE) {
+    return 'MODERATE'
+  }
+
+  return 'CONSERVATIVE'
+}
+
 function RiskAssessmentPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = React.useState(0)
   const [answers, setAnswers] = React.useState<Record<string, 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE'>>({})
   const [isLoading, setIsLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
   const navigate = useNavigate()
-  const { user, setUser } = useAuthStore()
+  const user = useAuthStore((state) => state.user)
+  const setUser = useAuthStore((state) => state.setUser)
 
   const currentQuestion = RISK_QUESTIONS[currentQuestionIndex]
+  const selectedAnswer = answers[currentQuestion.id]
   const progress = ((currentQuestionIndex + 1) / RISK_QUESTIONS.length) * 100
+
+  const finalRiskProfile = useMemo(
+    () => calculateRiskProfile(answers),
+    [answers],
+  )
 
   const handleAnswer = (value: 'CONSERVATIVE' | 'MODERATE' | 'AGGRESSIVE') => {
     setAnswers((prev) => ({
       ...prev,
       [currentQuestion.id]: value,
     }))
+  }
 
-    if (currentQuestionIndex < RISK_QUESTIONS.length - 1) {
-      setCurrentQuestionIndex((prev) => prev + 1)
+  const handleNext = () => {
+    if (!selectedAnswer) {
+      return
     }
+    setCurrentQuestionIndex((prev) => Math.min(prev + 1, RISK_QUESTIONS.length - 1))
   }
 
   const handleSubmit = async () => {
-    setIsLoading(true)
-
-    // Calculate final risk profile
-    const scores = {
-      CONSERVATIVE: 0,
-      MODERATE: 0,
-      AGGRESSIVE: 0,
+    if (!user) {
+      return
     }
 
-    Object.values(answers).forEach((answer) => {
-      scores[answer]++
+    setIsLoading(true)
+    setError(null)
+
+    const profile = calculateRiskProfile(answers)
+    const { error: updateError } = await authService.updateProfile({
+      risk_profile: profile,
     })
 
-    const finalProfile = 
-      scores.AGGRESSIVE > scores.MODERATE && scores.AGGRESSIVE > scores.CONSERVATIVE
-        ? 'AGGRESSIVE'
-        : scores.MODERATE > scores.CONSERVATIVE
-        ? 'MODERATE'
-        : 'CONSERVATIVE'
-
-    // Save to backend
-    const { error } = await authService.updateProfile({
-      risk_profile: finalProfile,
-    })
-
-    if (error) {
-      console.error('Error saving profile:', error)
+    if (updateError) {
+      setError('Falha ao salvar seu perfil. Tente novamente.')
       setIsLoading(false)
       return
     }
 
-    // Update store
-    if (user) {
-      setUser({ ...user, riskProfile: finalProfile })
-    }
-
-    // Redirect to dashboard
+    setUser({ ...user, riskProfile: profile })
     navigate('/dashboard')
+    setIsLoading(false)
   }
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <img src="/mundo-invest-logo-cutout.png" alt="Mundo Invest" style={styles.titleImage} />
-          <p style={styles.subtitle}>Questões sobre Perfil de Risco</p>
-        </div>
-
-        {/* Progress bar */}
-        <div style={styles.progressContainer}>
-          <div
-            style={{
-              ...styles.progressBar,
-              width: `${progress}%`,
-            }}
+    <div className="min-h-screen bg-slate-50 px-4 py-12">
+      <div className="mx-auto w-full max-w-3xl rounded-[32px] bg-white p-8 shadow-xl ring-1 ring-slate-200">
+        <div className="mb-8 flex flex-col gap-3 text-center">
+          <img
+            src="/mundo-invest-logo-cutout.png"
+            alt="Mundo Invest"
+            className="mx-auto h-24 w-auto rounded-2xl object-contain"
           />
-          <p style={styles.progressText}>
-            Pergunta {currentQuestionIndex + 1} de {RISK_QUESTIONS.length}
+          <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Avaliação de risco</p>
+          <h1 className="text-3xl font-semibold text-slate-900">Responda algumas perguntas</h1>
+          <p className="mx-auto max-w-2xl text-sm text-slate-600">
+            Suas respostas ajudam a personalizar recomendações e a definir seu perfil de risco.
           </p>
         </div>
 
-        {/* Question */}
-        <div style={styles.questionContainer}>
-          <h2 style={styles.questionText}>{currentQuestion.question}</h2>
-
-          <div style={styles.optionsContainer}>
-            {currentQuestion.options.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => handleAnswer(option.value)}
-                style={{
-                  ...styles.optionButton,
-                  backgroundColor:
-                    answers[currentQuestion.id] === option.value
-                      ? '#4f46e5'
-                      : '#e5e7eb',
-                  color:
-                    answers[currentQuestion.id] === option.value
-                      ? 'white'
-                      : '#1f2937',
-                  borderColor:
-                    answers[currentQuestion.id] === option.value
-                      ? '#4f46e5'
-                      : '#d1d5db',
-                }}
-              >
-                {option.text}
-              </button>
-            ))}
+        <div className="mb-6 rounded-3xl bg-slate-100 p-4">
+          <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-indigo-600 transition-all" style={{ width: `${progress}%` }} />
           </div>
+          <p className="mt-3 text-sm text-slate-600">Pergunta {currentQuestionIndex + 1} de {RISK_QUESTIONS.length}</p>
         </div>
 
-        {/* Bottom buttons */}
-        <div style={styles.buttonContainer}>
-          <button
-            onClick={() =>
-              setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))
-            }
-            disabled={currentQuestionIndex === 0}
-            style={{
-              ...styles.secondaryButton,
-              opacity: currentQuestionIndex === 0 ? 0.5 : 1,
-              cursor: currentQuestionIndex === 0 ? 'not-allowed' : 'pointer',
-            }}
-          >
-            Voltar
-          </button>
-
-          {currentQuestionIndex === RISK_QUESTIONS.length - 1 ? (
-            <button
-              onClick={handleSubmit}
-              disabled={isLoading || !answers[currentQuestion.id]}
-              style={{
-                ...styles.primaryButton,
-                opacity:
-                  isLoading || !answers[currentQuestion.id] ? 0.5 : 1,
-                cursor:
-                  isLoading || !answers[currentQuestion.id]
-                    ? 'not-allowed'
-                    : 'pointer',
-              }}
-            >
-              {isLoading ? 'Salvando...' : 'Finalizar'}
-            </button>
-          ) : (
-            <button
-              onClick={() =>
-                setCurrentQuestionIndex((prev) =>
-                  Math.min(prev + 1, RISK_QUESTIONS.length - 1)
+        <article className="space-y-6">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold text-slate-900">{currentQuestion.question}</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-1">
+              {currentQuestion.options.map((option) => {
+                const active = selectedAnswer === option.value
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleAnswer(option.value)}
+                    className={`rounded-3xl border p-4 text-left transition-shadow ${
+                      active
+                        ? 'border-indigo-500 bg-indigo-50 shadow-sm'
+                        : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span className="text-sm font-semibold text-slate-900">{option.text}</span>
+                  </button>
                 )
-              }
-              disabled={!answers[currentQuestion.id]}
-              style={{
-                ...styles.primaryButton,
-                opacity: !answers[currentQuestion.id] ? 0.5 : 1,
-                cursor: !answers[currentQuestion.id]
-                  ? 'not-allowed'
-                  : 'pointer',
-              }}
-            >
-              Próximo
-            </button>
-          )}
-        </div>
+              })}
+            </div>
+          </div>
 
-        <p style={styles.disclaimer}>
-          ⚠️ Suas respostas ajudam a personalizar suas recomendações educativas.
-        </p>
+          {error ? <div className="rounded-2xl bg-red-50 p-4 text-sm text-red-700">{error}</div> : null}
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              variant="secondary"
+              className="w-full sm:w-auto"
+              onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
+              disabled={currentQuestionIndex === 0}
+            >
+              Voltar
+            </Button>
+            {currentQuestionIndex === RISK_QUESTIONS.length - 1 ? (
+              <Button
+                className="w-full sm:w-auto"
+                onClick={handleSubmit}
+                isLoading={isLoading}
+                disabled={isLoading || !selectedAnswer}
+              >
+                Finalizar
+              </Button>
+            ) : (
+              <Button
+                className="w-full sm:w-auto"
+                variant="secondary"
+                onClick={handleNext}
+                disabled={!selectedAnswer}
+              >
+                Próximo
+              </Button>
+            )}
+          </div>
+
+          <div className="rounded-3xl bg-slate-100 p-4 text-sm text-slate-600">
+            <p className="font-semibold text-slate-900">Status atual:</p>
+            <p>Perfil previsto: <strong>{riskProfileLabels[finalRiskProfile]}</strong></p>
+            <p>Respostas selecionadas: {Object.keys(answers).length} de {RISK_QUESTIONS.length}</p>
+          </div>
+        </article>
       </div>
     </div>
   )
-}
-
-const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#f3f4f6',
-    fontFamily: 'sans-serif',
-    padding: '1rem',
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    padding: '2rem',
-    width: '100%',
-    maxWidth: '600px',
-  },
-  header: {
-    marginBottom: '2rem',
-  },
-  title: {
-    fontSize: '2rem',
-    fontWeight: 'bold',
-    color: '#4f46e5',
-    margin: '0 0 0.5rem 0',
-  },
-  titleImage: {
-    width: '220px',
-    maxWidth: '70%',
-    borderRadius: '16px',
-    objectFit: 'contain' as const,
-    marginBottom: '0.75rem',
-    boxShadow: '0 18px 44px -28px rgba(79, 70, 229, 0.75)',
-  },
-  subtitle: {
-    color: '#666',
-    margin: 0,
-    fontSize: '0.875rem',
-  },
-  progressContainer: {
-    marginBottom: '2rem',
-  },
-  progressBar: {
-    height: '4px',
-    backgroundColor: '#4f46e5',
-    borderRadius: '2px',
-    marginBottom: '0.5rem',
-    transition: 'width 0.3s ease',
-  },
-  progressText: {
-    fontSize: '0.875rem',
-    color: '#666',
-    margin: 0,
-  },
-  questionContainer: {
-    marginBottom: '2rem',
-  },
-  questionText: {
-    fontSize: '1.25rem',
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: '1.5rem',
-    margin: '0 0 1.5rem 0',
-  },
-  optionsContainer: {
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '1rem',
-  },
-  optionButton: {
-    padding: '1rem',
-    border: '2px solid',
-    borderRadius: '6px',
-    backgroundColor: '#e5e7eb',
-    color: '#1f2937',
-    fontSize: '1rem',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    textAlign: 'left' as const,
-    fontWeight: '500' as const,
-  },
-  buttonContainer: {
-    display: 'flex',
-    gap: '1rem',
-    marginTop: '2rem',
-  },
-  primaryButton: {
-    flex: 1,
-    padding: '0.75rem 1rem',
-    backgroundColor: '#4f46e5',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '0.875rem',
-    fontWeight: '600' as const,
-    cursor: 'pointer',
-  },
-  secondaryButton: {
-    flex: 1,
-    padding: '0.75rem 1rem',
-    backgroundColor: '#e5e7eb',
-    color: '#1f2937',
-    border: 'none',
-    borderRadius: '4px',
-    fontSize: '0.875rem',
-    fontWeight: '600' as const,
-    cursor: 'pointer',
-  },
-  disclaimer: {
-    fontSize: '0.75rem',
-    color: '#666',
-    textAlign: 'center' as const,
-    marginTop: '1.5rem',
-    margin: '1.5rem 0 0 0',
-  },
 }
 
 export default RiskAssessmentPage

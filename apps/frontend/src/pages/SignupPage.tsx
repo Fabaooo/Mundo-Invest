@@ -12,44 +12,39 @@ function SignupPage() {
   const [error, setError] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
   const navigate = useNavigate()
-  const { setUser } = useAuthStore()
+  const setUser = useAuthStore((state) => state.setUser)
+  const setTokens = useAuthStore((state) => state.setTokens)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setIsLoading(true)
 
-    const { error: signupError } = await authService.signup(email, password, fullName)
-
-    if (signupError) {
-      setError(signupError)
+    const signupResult = await authService.signup(email, password, fullName)
+    if (signupResult.error) {
+      setError(signupResult.error)
       setIsLoading(false)
       return
     }
 
-    const { error: loginError } = await authService.login(email, password)
-
-    if (loginError) {
+    const loginResult = await authService.login(email, password)
+    if (loginResult.error || !loginResult.data) {
       setError('Conta criada, mas falha ao fazer login. Tente novamente.')
       setIsLoading(false)
       return
     }
 
-    const { data: profile, error: profileError } = await authService.getProfile()
+    const { user, session } = loginResult.data
+    setTokens(session.access_token, session.refresh_token)
 
-    if (!profileError && profile) {
-      setUser({
-        id: profile.id,
-        email: profile.email,
-        fullName: profile.full_name,
-        riskProfile: profile.risk_profile,
-      })
+    setUser({
+      id: user.id,
+      email: user.email,
+      fullName: user.full_name,
+      riskProfile: user.risk_profile,
+    })
 
-      navigate('/risk-assessment')
-    } else {
-      navigate('/dashboard')
-    }
-
+    navigate(user.risk_profile ? '/dashboard' : '/risk-assessment')
     setIsLoading(false)
   }
 

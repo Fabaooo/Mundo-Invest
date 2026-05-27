@@ -7,6 +7,7 @@ import DashboardPage from './pages/DashboardPage'
 import RiskAssessmentPage from './pages/RiskAssessmentPage'
 import MarketDataPage from './pages/MarketDataPage'
 import ProtectedRoute from './components/ui/ProtectedRoute'
+import RiskAssessmentRoute from './components/ui/RiskAssessmentRoute'
 import MainLayout from './layout/MainLayout'
 import AuthLayout from './layout/AuthLayout'
 
@@ -32,35 +33,23 @@ function App() {
           }
         />
         <Route
-          path="/risk-assessment"
           element={
             <ProtectedRoute>
-              <MainLayout>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/market" element={<MarketDataPage />} />
+          <Route
+            path="/risk-assessment"
+            element={
+              <RiskAssessmentRoute>
                 <RiskAssessmentPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <DashboardPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/market"
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <MarketDataPage />
-              </MainLayout>
-            </ProtectedRoute>
-          }
-        />
+              </RiskAssessmentRoute>
+            }
+          />
+        </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

@@ -42,21 +42,24 @@ function PriceChart({ symbol, data, days, isLoading }: PriceChartProps) {
 
   const minPrice = Math.min(...data.map((d) => d.price))
   const maxPrice = Math.max(...data.map((d) => d.price))
-  const currentPrice = data[data.length - 1]?.price
-  const previousPrice = data[0]?.price
+  const currentPrice = data[data.length - 1]?.price ?? 0
+  const previousPrice = data[0]?.price ?? 0
   const change = previousPrice ? ((currentPrice - previousPrice) / previousPrice) * 100 : 0
+
+  const formatBRL = (v: number) =>
+    Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
 
   return (
     <div style={styles.chartContainer}>
       <div style={styles.chartHeader}>
         <div>
-          <h3 style={styles.chartTitle}>{symbol}</h3>
+          <h3 style={styles.chartTitle}>{symbol} (BRL)</h3>
           <p style={styles.chartSubtitle}>{timeframeLabel}</p>
         </div>
         <div style={styles.priceStats}>
           <div style={styles.statItem}>
             <span style={styles.statLabel}>Preço Atual</span>
-            <span style={styles.statValue}>${currentPrice.toFixed(2)}</span>
+            <span style={styles.statValue}>{formatBRL(currentPrice)}</span>
           </div>
           <div style={styles.statItem}>
             <span style={styles.statLabel}>Variação</span>
@@ -71,11 +74,11 @@ function PriceChart({ symbol, data, days, isLoading }: PriceChartProps) {
           </div>
           <div style={styles.statItem}>
             <span style={styles.statLabel}>Min</span>
-            <span style={styles.statValue}>${minPrice.toFixed(2)}</span>
+            <span style={styles.statValue}>{formatBRL(minPrice)}</span>
           </div>
           <div style={styles.statItem}>
             <span style={styles.statLabel}>Max</span>
-            <span style={styles.statValue}>${maxPrice.toFixed(2)}</span>
+            <span style={styles.statValue}>{formatBRL(maxPrice)}</span>
           </div>
         </div>
       </div>

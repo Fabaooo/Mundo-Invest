@@ -30,7 +30,7 @@ function MarketDataPage() {
               Bem-vindo, <strong>{user?.fullName ?? 'investidor'}</strong>! Explore os ativos em tempo real.
             </p>
           </div>
-          <Button onClick={refresh} className="px-4 py-2" variant="secondary">
+          <Button onClick={refresh} className="px-4 py-2" variant="ghost">
             🔄 Atualizar
           </Button>
         </div>
@@ -40,12 +40,17 @@ function MarketDataPage() {
         {selectedAsset ? (
           <section className="mb-6 rounded-xl bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-slate-800">{selectedAsset.name} ({selectedAsset.symbol.toUpperCase()})</h2>
-              <div className="flex gap-2">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800">
+                  {selectedAsset.name} ({selectedAsset.symbol.toUpperCase()})
+                </h2>
+                <p className="text-sm text-slate-500">Selecione outra moeda abaixo para atualizar o gráfico.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {[1, 7, 30, 365].map((days) => (
                   <Button
                     key={days}
-                    variant={timeframe === days ? 'primary' : 'secondary'}
+                    variant={timeframe === days ? 'primary' : 'ghost'}
                     onClick={() => setTimeframe(days)}
                   >
                     {days === 1 ? '1D' : days === 7 ? '1W' : days === 30 ? '1M' : '1Y'}
@@ -57,16 +62,23 @@ function MarketDataPage() {
             <PriceChart symbol={selectedAsset.symbol} data={priceHistory} days={timeframe} isLoading={isLoadingChart} />
           </section>
         ) : (
-          <div className="mb-6 rounded-xl bg-white p-6 text-sm text-slate-500">Nenhum ativo selecionado.</div>
+          <div className="mb-6 rounded-xl bg-white p-6 text-sm text-slate-500">
+            Nenhum ativo selecionado. Clique em um ativo abaixo para ver o gráfico de preços.
+          </div>
         )}
 
         <section className="rounded-xl bg-white p-4 shadow-sm">
-          <h2 className="mb-3 text-xl font-semibold text-slate-800">🏆 Principais Ativos</h2>
-          <AssetList
-            assets={assets}
-            isLoading={isLoadingAssets}
-            onAssetSelect={setSelectedAsset}
-          />
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-xl font-semibold text-slate-800">🏆 Principais Ativos</h2>
+              <p className="text-sm text-slate-500">Toque em um ativo para visualizar seu desempenho.</p>
+            </div>
+            <Button variant="ghost" onClick={() => setSelectedAsset(null)}>
+              Limpar seleção
+            </Button>
+          </div>
+
+          <AssetList assets={assets} isLoading={isLoadingAssets} onAssetSelect={setSelectedAsset} />
         </section>
 
         <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">

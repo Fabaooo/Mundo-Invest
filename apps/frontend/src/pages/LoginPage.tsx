@@ -2,6 +2,8 @@ import React from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../stores/authStore'
 import * as authService from '../services/authService'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
 
 function LoginPage() {
   const [email, setEmail] = React.useState('')
@@ -9,9 +11,9 @@ function LoginPage() {
   const [error, setError] = React.useState('')
   const [isLoading, setIsLoading] = React.useState(false)
   const [showPassword, setShowPassword] = React.useState(false)
-  const [rememberMe, setRememberMe] = React.useState(true)
   const navigate = useNavigate()
-  const { setUser } = useAuthStore()
+  const setUser = useAuthStore((state) => state.setUser)
+  const setTokens = useAuthStore((state) => state.setTokens)
 
   const togglePassword = () => setShowPassword((prev) => !prev)
 
@@ -20,33 +22,32 @@ function LoginPage() {
     setError('')
     setIsLoading(true)
 
-    const { error: loginError } = await authService.login(email, password)
-    if (loginError) {
-      setError(loginError)
+    const loginResult = await authService.login(email, password)
+    if (loginResult.error || !loginResult.data) {
+      setError(loginResult.error || 'Falha ao efetuar login.')
       setIsLoading(false)
       return
     }
 
-    const { data: profile, error: profileError } = await authService.getProfile()
-    if (!profileError && profile) {
-      setUser({
-        id: profile.id,
-        email: profile.email,
-        fullName: profile.full_name,
-        riskProfile: profile.risk_profile,
-      })
+    const { user, session } = loginResult.data
+    setTokens(session.access_token, session.refresh_token)
 
-      if (!profile.risk_profile) {
-        navigate('/risk-assessment')
-      } else {
-        navigate('/dashboard')
-      }
-    } else {
-      setError('Nao foi possivel ler o perfil. Tente novamente.')
+    const profileResult = await authService.getProfile()
+    if (profileResult.error || !profileResult.data) {
+      setError('Não foi possível carregar o perfil. Tente novamente.')
       setIsLoading(false)
       return
     }
 
+    const profile = profileResult.data
+    setUser({
+      id: profile.id,
+      email: profile.email,
+      fullName: profile.full_name,
+      riskProfile: profile.risk_profile,
+    })
+
+    navigate(profile.risk_profile ? '/dashboard' : '/risk-assessment')
     setIsLoading(false)
   }
 
@@ -69,16 +70,16 @@ function LoginPage() {
 
         <section className="auth-hero">
           <div className="hero-headline">
-            <span className="hero-tag">Intelig&ecirc;ncia de mercado com IA</span>
-            <h1>Decis&otilde;es de investimento guiadas por dados.</h1>
+            <span className="hero-tag">Inteligência de mercado com IA</span>
+            <h1>Decisões de investimento guiadas por dados.</h1>
             <p className="hero-copy">
               Monitore risco, volatilidade e sinais de entrada em criptoativos com modelos
-              anal&iacute;ticos, alertas em tempo real e leitura clara de carteira.
+              analíticos, alertas em tempo real e leitura clara de carteira.
             </p>
 
             <div className="hero-actions">
-              <Link to="/signup" className="hero-primary-link">Come&ccedil;ar agora</Link>
-              <Link to="/#markets" className="hero-secondary-link">Ver pre&ccedil;os ao vivo</Link>
+              <Link to="/signup" className="hero-primary-link">Começar agora</Link>
+              <Link to="/#markets" className="hero-secondary-link">Ver preços ao vivo</Link>
             </div>
 
             <div className="hero-kpis" aria-label="Indicadores da plataforma">
@@ -96,15 +97,15 @@ function LoginPage() {
               </div>
             </div>
 
-            <div className="trust-strip" aria-label="Sinais de confianca">
+            <div className="trust-strip" aria-label="Sinais de confiança">
               <span>BRL e PIX preparados</span>
               <span>Dados em tempo real</span>
-              <span>Seguran&ccedil;a por design</span>
+              <span>Segurança por design</span>
             </div>
 
             <ul className="hero-features">
-              <li>Detec&ccedil;&atilde;o de volatilidade e anomalias de pre&ccedil;o</li>
-              <li>Score propriet&aacute;rio para risco, retorno e liquidez</li>
+              <li>Detecção de volatilidade e anomalias de preço</li>
+              <li>Score proprietário para risco, retorno e liquidez</li>
               <li>Alertas objetivos para proteger capital e capturar oportunidade</li>
             </ul>
           </div>
@@ -115,14 +116,14 @@ function LoginPage() {
               <span className="preview-badge">Modelo ativo</span>
             </div>
 
-            <div className="app-showcase" aria-label="Previa ilustrativa do aplicativo">
+            <div className="app-showcase" aria-label="Prévia ilustrativa do aplicativo">
               <div className="phone-mockup">
                 <div className="phone-speaker" />
                 <img src="/mundo-invest-logo-cutout.png" alt="" className="phone-logo" />
                 <div className="phone-balance">
-                  <span>Patrim&ocirc;nio</span>
+                  <span>Patrimônio</span>
                   <strong>R$ 84.920</strong>
-                  <small>+6,8% no m&ecirc;s</small>
+                  <small>+6,8% no mês</small>
                 </div>
                 <div className="phone-bars">
                   <span />
@@ -149,7 +150,7 @@ function LoginPage() {
             <div className="preview-title">
               <div>
                 <strong>BTC / BRL</strong>
-                <small>Previs&atilde;o intraday</small>
+                <small>Previsão intraday</small>
               </div>
               <span>+12,4% hoje</span>
             </div>
@@ -177,7 +178,7 @@ function LoginPage() {
               </div>
             </div>
 
-            <div className="risk-meter" aria-label="Distribuicao de risco">
+            <div className="risk-meter" aria-label="Distribuição de risco">
               <div className="risk-meter-header">
                 <span>Score de risco da carteira</span>
                 <strong>Moderado</strong>
@@ -205,89 +206,55 @@ function LoginPage() {
             <p className="auth-form-badge">Acesso seguro</p>
             <h2>Entre no painel</h2>
             <p className="auth-form-copy">
-              Acompanhe posi&ccedil;&otilde;es, alertas quantitativos e recomenda&ccedil;&otilde;es em tempo real.
+              Acompanhe posições, alertas quantitativos e recomendações em tempo real.
             </p>
           </header>
 
           <form onSubmit={handleSubmit} className="form-grid">
-            <label className="input-label">
-              <span>Email</span>
-              <div className="input-with-icon">
-                <span className="input-icon" aria-hidden="true">E</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  required
-                />
-              </div>
-            </label>
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seu@email.com"
+              required
+            />
 
-            <label className="input-label">
-              <span>Senha</span>
-              <div className="input-with-icon">
-                <span className="input-icon" aria-hidden="true">S</span>
-                <input
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-slate-700">Senha</label>
+              <div className="relative">
+                <Input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="********"
                   minLength={8}
                   required
+                  className="pr-24"
                 />
                 <button
                   type="button"
-                  className="toggle-password"
                   onClick={togglePassword}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-200"
                 >
                   {showPassword ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
-            </label>
-
-            {error && <div className="form-error">{error}</div>}
-
-            <div className="form-meta">
-              <label className="remember-me">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                />
-                Lembrar acesso
-              </label>
-              <Link to="/reset-password">Esqueceu a senha?</Link>
             </div>
 
-            <button type="submit" className="btn-primary auth-submit" disabled={isLoading}>
-              {isLoading ? 'Validando acesso...' : 'Entrar na plataforma'}
-            </button>
+            {error && <div className="rounded-md bg-red-50 text-red-700 p-3 text-sm">{error}</div>}
 
-            <div className="auth-socials">
-              <button type="button" className="social-btn google">
-                Entrar com Google
-              </button>
-              <button type="button" className="social-btn apple">
-                Entrar com Apple
-              </button>
-            </div>
+            <Button type="submit" isLoading={isLoading} className="w-full">
+              Entrar
+            </Button>
 
-            <div className="form-links">
-              <span>Novo por aqui?</span>
-              <Link to="/signup">Criar conta de investidor</Link>
-            </div>
+            <p className="text-center text-sm text-slate-500">
+              Não tem conta?{' '}
+              <Link to="/signup" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                Criar conta
+              </Link>
+            </p>
           </form>
-
-          <div className="auth-trust-badges" aria-label="Recursos de confianca">
-            <span>2FA pronto</span>
-            <span>Alertas de risco</span>
-            <span>Monitoramento 24/7</span>
-          </div>
-
-          <p className="security-tip">
-            Ambiente protegido para acompanhar mercado, risco e carteira com mais clareza.
-          </p>
         </section>
       </div>
     </div>
@@ -295,3 +262,4 @@ function LoginPage() {
 }
 
 export default LoginPage
+

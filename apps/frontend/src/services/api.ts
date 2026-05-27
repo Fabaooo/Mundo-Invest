@@ -14,9 +14,10 @@ api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
   if (token) {
     if (!config.headers) {
-      config.headers = {} as any
+      config.headers = { Authorization: `Bearer ${token}` } as any
+    } else {
+      (config.headers as any).Authorization = `Bearer ${token}`
     }
-    ;(config.headers as Record<string, string>).Authorization = `Bearer ${token}`
   }
   return config
 })

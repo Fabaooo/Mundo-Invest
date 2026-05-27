@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
 
 const marketItems = [
   { name: 'BITCOIN', symbol: 'BTC', price: '$64,281.40', change: '+2.4%', positive: true },
@@ -129,9 +131,9 @@ function LandingPage() {
               Como esta o mercado hoje e qual o impacto nas minhas posicoes?
             </div>
 
-            <div className="advisor-input">
+            <div className="advisor-input flex items-center gap-2">
               <span>Analisar meu risco</span>
-              <button type="button" aria-label="Enviar">›</button>
+              <Button variant="primary" aria-label="Enviar">›</Button>
             </div>
           </article>
 
@@ -218,9 +220,9 @@ function LandingPage() {
           Junte-se a investidores que usam dados, IA e gestao de risco para tomar
           decisoes melhores.
         </p>
-        <form>
-          <input type="email" placeholder="Seu melhor e-mail" aria-label="Seu melhor email" />
-          <Link to="/signup">Criar conta gratis</Link>
+        <form className="flex items-center gap-3">
+          <Input type="email" placeholder="Seu melhor e-mail" aria-label="Seu melhor email" className="flex-1" />
+          <Link to="/signup"><Button variant="primary">Criar conta grátis</Button></Link>
         </form>
         <span>Sem cartao de credito necessario</span>
       </section>
